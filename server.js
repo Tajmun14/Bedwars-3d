@@ -50,7 +50,7 @@ function addToRoom(socket, room, data, ack) {
   room.players.set(socket.id,p);
   playerRoom.set(socket.id,room.code);
   socket.join(room.code);
-  if (typeof ack === "function") ack({ok:true,code:room.code,count:room.players.size,team,players:publicPlayers(room)});
+  if (typeof ack === "function") ack({ok:true,code:room.code,count:room.players.size,team,players:publicPlayers(room),blocks:[...room.blocks.values()]});
   socket.to(room.code).emit("player:join",p);
   sendRoom(room);
 }
@@ -74,7 +74,7 @@ io.on("connection", socket => {
     const team=Number(data&&data.team);
     if(!p)return typeof ack==="function"&&ack({ok:false,error:"Najpierw dołącz do pokoju."});
     if(!Number.isInteger(team)||team<0||team>=TEAM_CAPACITY.length)return typeof ack==="function"&&ack({ok:false,error:"Nieprawidłowa drużyna."});
-    if(teamCount(room,team)>=TEAM_CAPACITY[team])return typeof ack==="function"&&ack({ok:false,error:"Ta drużyna nie ma wolnych miejsc."});
+    if(p.team!==team&&teamCount(room,team)>=TEAM_CAPACITY[team])return typeof ack==="function"&&ack({ok:false,error:"Ta drużyna nie ma wolnych miejsc."});
     p.team=team;
     if(typeof ack==="function")ack({ok:true,team});
     sendRoom(room);
@@ -116,6 +116,7 @@ io.on("connection", socket => {
     const code=playerRoom.get(socket.id),room=code&&rooms.get(code),att=room&&room.players.get(socket.id);
     const target=room&&room.players.get(String(data&&data.target||""));
     if(!att||!target||att.id===target.id||att.team===target.team||!target.alive)return;
+    if(Math.hypot(att.x-target.x,att.z-target.z)>6.5||Math.abs(att.y-target.y)>4)return;
     const damage=Math.max(1,Math.min(12,Number(data.damage)||4));
     io.to(target.id).emit("player:hit",{damage,from:{id:att.id,name:att.name,team:att.team,x:att.x,y:att.y,z:att.z},knockback:Math.max(4,Math.min(12,Number(data.knockback)||8))});
   });
