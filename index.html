@@ -586,7 +586,7 @@ function mpChooseTeam(team){
  MP_STATE.wantTeam=team;
  const s=MP_STATE.socket;
  if(s&&s.connected&&MP_STATE.room){
-  s.emit('room:team',{team},r=>{if(!r||!r.ok){mpStatus(r&&r.error||'Nie udało się zmienić drużyny.');return}MP_STATE.team=team;mpStatus('Wybrano drużynę.');});
+  s.emit('room:team',{team},r=>{if(!r||!r.ok){mpStatus(r&&r.error||'Nie udało się zmienić drużyny.');return}MP_STATE.team=team;mpApplyTeam(team);mpStatus('Wybrano drużynę.');});
  }else mpStatus('Wybrana drużyna: '+['Czerwoni','Niebiescy','Zieloni','Żółci','Błękitni','Różowi','Pomarańczowi','Fioletowi'][team]);
 }
 function mpApplyTeam(team){
@@ -597,11 +597,11 @@ function mpApplyTeam(team){
  give('w'+team,32);R();
 }
 function mpReconcileBots(list){
- if(MP_STATE.activated===false&&!started)return;
+ if(!MP_STATE.activated)return;
  for(let team=0;team<TT.length;team++){
   const needed=(list||[]).filter(p=>p.team===team).length;
   for(let n=0;n<needed;n++){
-   const i=bots.findIndex(b=>b.t===team&&b.alive&& !b.mpRemoved);
+   const i=bots.findIndex(b=>b.t===team&&!b.mpRemoved);
    if(i<0)break;
    const b=bots[i];b.mpRemoved=true;scene.remove(b.m);
    const ai=A.indexOf(b);if(ai>=0)A.splice(ai,1);
@@ -657,7 +657,7 @@ function mpRemoteUpdate(d){
   r={id:d.id,name:String(d.name||'Gracz').slice(0,16),m:model.g,model:model,x:d.x,y:d.y,z:d.z,yaw:0,hp:20,team:team};
   MP_STATE.remotes.set(d.id,r);
  } 
- r.x=d.x;r.y=d.y;r.z=d.z;r.yaw=Number(d.yaw)||0;r.hp=Number.isFinite(d.hp)?d.hp:20;r.alive=d.alive!==false;r.name=String(d.name||r.name);
+ r.x=d.x;r.y=d.y;r.z=d.z;r.yaw=Number(d.yaw)||0;r.hp=Number.isFinite(d.hp)?d.hp:20;r.alive=d.alive!==false;r.name=String(d.name||r.name);if(Number.isInteger(d.team))r.team=d.team;
  r.m.visible=r.alive;r.m.position.set(r.x,r.y,r.z);r.m.rotation.y=r.yaw;
 }
 function mpRemoteRemove(id){const r=MP_STATE.remotes.get(id);if(r){scene.remove(r.m);MP_STATE.remotes.delete(id)}}
