@@ -95,8 +95,10 @@ io.on("connection", socket => {
     if(![x,y,z].every(Number.isInteger)||Math.abs(x)>150||Math.abs(y)>80||Math.abs(z)>150)return;
     const key=x+","+y+","+z;
     if(room.blocks.size>5000)return;
-    room.blocks.set(key,{x,y,z,k});
-    socket.to(code).emit("game:block:add",{x,y,z,k,by:socket.id});
+    const team=Number.isInteger(data.team)&&data.team>=0&&data.team<=7?data.team:p.team;
+    const block={x,y,z,k,team};
+    room.blocks.set(key,block);
+    socket.to(code).emit("game:block:add",{...block,by:socket.id});
   });
   socket.on("game:block:remove", data => {
     const code=playerRoom.get(socket.id),room=code&&rooms.get(code),p=room&&room.players.get(socket.id);
