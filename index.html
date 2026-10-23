@@ -284,9 +284,9 @@ function hurt(e,d,from,crit,att,kb=8){const T=TT[e.t];snd(att&&att.isP?'sword':'
 function die(e){e.alive=false;e.rt=3;e.dt=0;snd('die',1,e.p.x,e.p.z);spawn(e.p.x,e.p.y+1,e.p.z,TT[e.t].col,14);const k=e.last&&e.lt>0?e.last:null;if(e.R){if(k){e.fear++;e.dng[k.t]=(e.dng[k.t]||0)+1;feed('🧠 '+e.name+': ostrożniej wobec '+PLN[k.t],TT[e.t].col)}else{e.nz[nearE(e.lx,e.lz)]+=1;e.care=Math.min(3,e.care+1);feed('🧠 '+e.name+' unika tej trasy',TT[e.t].col)}}
  feed(k?`${k.name} ⚔ ${e.name}`:`${e.name} spadł`,TT[e.t].col);if(k){k.kills++;if(k.isP)ST.kills++}
  if(e.isP)say('💀');elim()}
-function bedDestroyed(ti,att){const T=TT[ti];if(!T.bed)return;T.bed=false;snd('bed',1,T.bx,T.bz);spawn(T.bx,2,T.bz,0xff3333,30);shake=.7;feed(`ŁÓŻKO ${T.name} ZNISZCZONE${att?' – '+att.name:''}`,T.col);if(att&&att.isP)ST.beds++;if(ti===0)say('TWOJE ŁÓŻKO ZNISZCZONE!');elim()}
-function elim(){let alive=0,last=-1;for(const T of TT){if(!T.out&&!T.bed&&!A.some(a=>a.t===T.i&&a.alive)){T.out=true;feed(T.name+' WYELIMINOWANA',T.col);if(T.i===0)end('elim')}if(!T.out){alive++;last=T.i}}
- if(alive===1&&!over)end(last===0?'win':'lose')}
+function bedDestroyed(ti,att){const T=TT[ti];if(!T.bed)return;T.bed=false;snd('bed',1,T.bx,T.bz);spawn(T.bx,2,T.bz,0xff3333,30);shake=.7;feed(`ŁÓŻKO ${T.name} ZNISZCZONE${att?' – '+att.name:''}`,T.col);if(att&&att.isP)ST.beds++;if(ti===P.t)say('TWOJE ŁÓŻKO ZNISZCZONE!');elim()}
+function elim(){let alive=0,last=-1;for(const T of TT){if(!T.out&&!T.bed&&!A.some(a=>a.t===T.i&&a.alive)){T.out=true;feed(T.name+' WYELIMINOWANA',T.col);if(T.i===P.t)end('elim')}if(!T.out){alive++;last=T.i}}
+ if(alive===1&&!over)end(last===P.t?'win':'lose')}
 const SV=()=>{try{return JSON.parse(localStorage.getItem('bw6'))||{g:0,w:0,k:0,b:0,r:0}}catch(e){return{g:0,w:0,k:0,b:0,r:0}}};
 const stats=()=>{const s=SV();return `Gry: ${s.g} · Wygrane: ${s.w}<br>Zabójstwa: ${s.k} · Łóżka: ${s.b}<br>Surowce: ${s.r}`};
 let NICK='Gracz',DB=null,USR=null,UID=null,CNAME='';
@@ -356,7 +356,7 @@ function use(){const t=slots[sel];if(t){t.n--;if(!t.n)slots[sel]=null;R()}}
 function act(btn){if(!locked||!P.alive||over||ui||pau)return;
  cam.getWorldDirection(dir);const h=vray(cam.position,dir,5.5),held=slots[sel],id=held&&held.id,T0=TT[P.t];
  if(btn===0){if(P.cd>0)return;swing=1;P.cd=.45;let best=null,bd=9;
-  for(const b of bots){if(!b.alive||b.t===0)continue;const l=look(b.p,.9);if(l.d<4.2&&l.dot>.93&&l.d<bd&&(!h||h.d>l.d-.5)){best=b;bd=l.d}}
+  for(const b of bots){if(!b.alive||b.t===P.t)continue;const l=look(b.p,.9);if(l.d<4.2&&l.dot>.93&&l.d<bd&&(!h||h.d>l.d-.5)){best=b;bd=l.d}}
   if(best){const kb=id==='kb';hurt(best,(kb?2:SWD[P.sw])*(1+.25*T0.up.sharp),P.p,!P.ground&&P.v.y<0,P,kb?16:8);return}
   let remote=null,rd=4.2;
   for(const r of MP_STATE.remotes.values()){if(!r.alive||r.team===P.t)continue;const l=look(r.m.position,.9);if(l.d<rd&&l.dot>.93&&(!h||h.d>l.d-.5)){remote=r;rd=l.d}}
@@ -592,7 +592,7 @@ function mpChooseTeam(team){
 function mpApplyTeam(team){
  team=Math.max(0,Math.min(TT.length-1,Number(team)||0));
  MP_STATE.team=team;MP_STATE.wantTeam=team;P.t=team;P.sx=TT[team].sx;P.sz=TT[team].sz;
- respawn(P);
+ respawn(P);VG.position.set(TT[team].ax,.5,TT[team].az-3);VG2.position.set(TT[team].ux,.5,TT[team].uz);
  for(let i=0;i<slots.length;i++)if(slots[i]&&/^w[0-7]$/.test(slots[i].id))slots[i]=null;
  give('w'+team,32);R();
 }
