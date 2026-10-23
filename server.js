@@ -10,7 +10,7 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
 const playerRoom = new Map();
-const TEAM_CAPACITY = [1, 2, 2, 2, 1, 1, 1, 1];
+const TEAM_CAPACITY = [2, 2, 2, 2, 2, 2, 2, 2];
 const BLOCKS = new Set(["stone", "plank", "brick", "glass", "obsidian", "tnt", "w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7"]);
 const makeCode = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
