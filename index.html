@@ -28,7 +28,8 @@ button{font:700 15px monospace;padding:9px 14px;background:#555;color:#fff;borde
 .card{background:#8b8b8b;border:3px solid #373737;padding:6px;text-align:center;font-size:12px;color:#000}
 .pp{letter-spacing:2px;color:#164;font-size:12px}#bl{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:1}.ds{font-size:10px;min-height:28px;margin:2px 0}.card img{width:38px;height:38px}.card .pr img{width:16px;height:16px;vertical-align:middle}.card button{width:100%;font-size:11px;padding:5px 2px;margin-top:4px}.card button:disabled{background:#444;color:#aaa}
 .tb{display:none;position:fixed;width:60px;height:60px;border-radius:50%;background:#fff5;border:3px solid #fff9;font-size:26px;align-items:center;justify-content:center;z-index:3}
-</style></head><body>
+</style><script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head><body>
 <div id="bl"></div><div id="fl"></div><div id="hud"></div><div id="feed"></div><div id="cross"></div><div id="tip"></div><div id="res"></div><div id="bar"></div>
 <div class="tb" id="bA" style="right:20px;bottom:150px">⛏</div><div class="tb" id="bP" style="right:92px;bottom:110px">▣</div>
 <div class="tb" id="bJ" style="right:20px;bottom:80px">⬆</div><div class="tb" id="bI" style="right:20px;top:60px;width:44px;height:44px">🎒</div><div class="tb" id="bS" style="right:72px;top:60px;width:44px;height:44px">🛒</div>
@@ -306,10 +307,11 @@ function end(kind){if(over)return;over=true;snd(kind==='win'?'win':'die');if(kin
  document.exitPointerLock();uiEl.style.display='none';msgEl.style.display='flex';
  msgEl.innerHTML=`<h1>${kind==='win'?'🏆 ZWYCIĘSTWO':kind==='elim'?'☠ ELIMINACJA':'💀 PORAŻKA'}</h1><div>Zabójstwa: ${ST.kills}<br>Zniszczone łóżka: ${ST.beds}<br>Zebrane surowce: ${ST.res}<br><br>Odśwież stronę, aby zagrać ponownie</div><div id="mi" style="max-width:440px;margin-top:8px"></div>`}
 const CTL='WASD ruch · Spacja skok · LPM bij/niszcz · PPM stawiaj/używaj/sklep (patrz na osadnika)<br>1–9 / kółko: slot · E ekwipunek · Q wyrzuć · Shift kucanie: nie spadasz z krawędzi, a PPM (też przytrzymany) stawia blok przed tobą · TNT postawione obok siebie wyrzuca cię w powietrze – tak przeskoczysz przepaść · ESC menu<br>Telefon: lewa połowa = ruch, prawa = kamera, przyciski po prawej';
-function menu(){pau=true;msgEl.style.display='flex';msgEl.innerHTML=`<h1>BEDWARS</h1><div>8 drużyn · mosty budujesz sam · łóżka · generatory · sklep</div><div class="mb"><button data-a="play">${started?'WZNÓW':'GRAJ'}</button><button data-a="shop">SKLEP</button><button data-a="inv">EKWIPUNEK</button><button data-a="ctl">STEROWANIE</button><button data-a="st">STATYSTYKI</button><button data-a="set">USTAWIENIA</button><button data-a="acc">KONTO</button><button data-a="top">TOPKA</button></div><div id="mi" style="max-width:440px"></div>`}
+function menu(){pau=true;msgEl.style.display='flex';msgEl.innerHTML=`<h1>BEDWARS</h1><div>8 drużyn · mosty budujesz sam · łóżka · generatory · sklep</div><div class="mb"><button data-a="play">${started?'WZNÓW':'GRAJ'}</button><button data-a="shop">SKLEP</button><button data-a="inv">EKWIPUNEK</button><button data-a="ctl">STEROWANIE</button><button data-a="st">STATYSTYKI</button><button data-a="set">USTAWIENIA</button><button data-a="acc">KONTO</button><button data-a="top">TOPKA</button><button data-a="mp">MULTIPLAYER</button></div><div id="mi" style="max-width:440px"></div>`}
 const lock=()=>{try{ren.domElement.requestPointerLock()}catch(e){}};
 msgEl.onclick=e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a||over)return;
  if(a==='play'){started=true;pau=false;msgEl.style.display='none';if(touch)locked=true;else lock()}
+ else if(a==='mp')mpMenu();
  else if(a==='shop'||a==='inv'){msgEl.style.display='none';shopMode='all';openUI(a,false,true)}
  else if(a==='dif'){DIF=(DIF+1)%4;try{localStorage.setItem('bw6d',DIF)}catch(e){}setUI()}
  else if(a==='snd'){SND=!SND;setUI()}
@@ -559,5 +561,73 @@ function loop(now){requestAnimationFrame(loop);try{const dt=Math.min((now-last)/
  if(msgT>0){msgT-=dt;if(msgT<=0)tip.textContent=''}
  if(fr%12===0)hudU();
  ren.render(scene,cam)}catch(e){showErr(e)}}
+
+/* Multiplayer rooms: room management and remote-player position display. */
+const MP_STATE={socket:null,room:null,remotes:new Map(),name:"Gracz"};
+function mpMenu(){
+ pau=true;msgEl.style.display='flex';
+ const savedUrl=(()=>{try{return localStorage.getItem('bw_mp_url')||''}catch(e){return ''}})();
+ const savedName=(()=>{try{return localStorage.getItem('bw6n')||P.name||'Gracz'}catch(e){return P.name||'Gracz'}})();
+ msgEl.innerHTML='<h1>MULTIPLAYER</h1><div style="max-width:520px;padding:10px">Pokój dla 2–10 graczy. Wpisz adres serwera multiplayer oraz nick.<br><br><input id="mpUrl" placeholder="https://adres-twojego-serwera" value="'+esc(savedUrl)+'" style="box-sizing:border-box;width:min(90vw,420px);padding:10px;font:15px monospace"><br><input id="mpNick" maxlength="16" placeholder="Nick" value="'+esc(savedName)+'" style="box-sizing:border-box;width:min(90vw,420px);padding:10px;margin-top:8px;font:15px monospace"><br><div class="mb"><button data-mp="create">UTWÓRZ POKÓJ</button></div><input id="mpCode" maxlength="6" placeholder="KOD POKOJU" style="text-transform:uppercase;width:180px;padding:10px;font:18px monospace;text-align:center"><div class="mb"><button data-mp="join">DOŁĄCZ</button><button data-mp="back">WRÓĆ</button></div><div id="mpStatus" style="max-width:480px;overflow-wrap:anywhere">Najpierw uruchom serwer multiplayer i wpisz jego adres.</div></div>';
+}
+function mpStatus(t){const e=document.getElementById('mpStatus');if(e)e.textContent=t}
+function mpConnect(action,code){
+ const u=document.getElementById('mpUrl'),n=document.getElementById('mpNick');
+ const url=(u&&u.value||'').trim().replace(/\/+$/,'');
+ const name=(n&&n.value||'Gracz').trim().slice(0,16)||'Gracz';
+ if(!url||url.indexOf('YOUR-SERVICE')>=0){mpStatus('Wpisz prawdziwy adres wdrożonego serwera Node.js. Sam GitHub Pages nie obsługuje połączeń Socket.IO.');return}
+ try{localStorage.setItem('bw_mp_url',url);localStorage.setItem('bw6n',name)}catch(e){}
+ MP_STATE.name=name;P.name=name;
+ if(MP_STATE.socket&&MP_STATE.socket.connected){mpSendRoomAction(action,code,name);return}
+ if(MP_STATE.socket){MP_STATE.socket.disconnect();MP_STATE.socket=null}
+ if(typeof io!=='function'){mpStatus('Nie udało się wczytać klienta Socket.IO. Odśwież stronę i spróbuj ponownie.');return}
+ mpStatus('Łączenie z serwerem…');
+ const s=io(url,{transports:['websocket','polling'],timeout:10000});MP_STATE.socket=s;
+ s.on('connect',()=>mpSendRoomAction(action,code,name));
+ s.on('connect_error',e=>mpStatus('Nie można połączyć z serwerem: '+(e&&e.message||'błąd połączenia')));
+ s.on('room:players',list=>{for(const p of list||[])if(p.id!==s.id)mpRemoteUpdate(p);mpStatus('Pokój '+(MP_STATE.room||'')+' · gracze: '+((list||[]).length)+'/10. Uruchom grę przyciskiem GRAJ.')});
+ s.on('player:join',p=>{if(p&&p.id!==s.id)mpRemoteUpdate(p);mpStatus('Gracz dołączył do pokoju '+(MP_STATE.room||''))});
+ s.on('player:update',p=>{if(p&&p.id!==s.id)mpRemoteUpdate(p)});
+ s.on('player:leave',id=>mpRemoteRemove(id));
+ s.on('room:error',m=>mpStatus(m||'Błąd pokoju.'));
+}
+function mpSendRoomAction(action,code,name){
+ const s=MP_STATE.socket;if(!s)return;
+ const done=(r)=>{if(!r||!r.ok){mpStatus(r&&r.error||'Nie udało się wejść do pokoju.');return}
+ MP_STATE.room=r.code;MP_STATE.team=r.team;MP_STATE.remotes.forEach((v,k)=>mpRemoteRemove(k));
+ const c=document.getElementById('mpCode');if(c)c.value=r.code;
+ mpStatus('Połączono! Kod pokoju: '+r.code+' · '+r.count+'/10 graczy. Podaj kod znajomym. Ruch graczy jest synchronizowany; walka, bloki i łóżka nie są jeszcze synchronizowane.');
+ };
+ if(action==='create')s.emit('room:create',{name:name},done);
+ else s.emit('room:join',{code:(code||'').trim().toUpperCase(),name:name},done);
+}
+function mpRemoteUpdate(d){
+ if(!d||!d.id||!Number.isFinite(d.x)||!Number.isFinite(d.y)||!Number.isFinite(d.z))return;
+ let r=MP_STATE.remotes.get(d.id);
+ if(!r){
+  const team=Math.max(0,Math.min(TT.length-1,Number(d.team)||1));
+  const model=human(TT[team].col,0x223344,0xe0b08a,0x88aaff);
+  scene.add(model.g);
+  r={id:d.id,name:String(d.name||'Gracz').slice(0,16),m:model.g,model:model,x:d.x,y:d.y,z:d.z,yaw:0,hp:20,team:team};
+  MP_STATE.remotes.set(d.id,r);
+ } 
+ r.x=d.x;r.y=d.y;r.z=d.z;r.yaw=Number(d.yaw)||0;r.hp=Number.isFinite(d.hp)?d.hp:20;r.alive=d.alive!==false;r.name=String(d.name||r.name);
+ r.m.visible=r.alive;r.m.position.set(r.x,r.y,r.z);r.m.rotation.y=r.yaw;
+}
+function mpRemoteRemove(id){const r=MP_STATE.remotes.get(id);if(r){scene.remove(r.m);MP_STATE.remotes.delete(id)}}
+msgEl.addEventListener('click',e=>{
+ const b=e.target.closest&&e.target.closest('[data-mp]');if(!b)return;
+ const a=b.dataset.mp;
+ if(a==='back'){menu();return}
+ if(a==='create'){mpConnect('create','');return}
+ if(a==='join'){const c=document.getElementById('mpCode');if(!c||!c.value.trim()){mpStatus('Wpisz kod pokoju.');return}mpConnect('join',c.value);return}
+});
+setInterval(()=>{
+ const s=MP_STATE.socket;
+ if(!s||!s.connected||!MP_STATE.room)return;
+ s.emit('player:state',{name:MP_STATE.name,x:P.p.x,y:P.p.y,z:P.p.z,yaw:yaw,hp:P.hp,alive:!!P.alive});
+ for(const r of MP_STATE.remotes.values()){r.m.position.x+=(r.x-r.m.position.x)*.65;r.m.position.y+=(r.y-r.m.position.y)*.65;r.m.position.z+=(r.z-r.m.position.z)*.65}
+},100);
+
 requestAnimationFrame(loop);
 </script></body></html>
