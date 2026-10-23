@@ -86,6 +86,9 @@ io.on("connection", socket => {
     if(Math.abs(data.x)>1000||Math.abs(data.y)>500||Math.abs(data.z)>1000)return;
     p.name=safeName(data.name);p.x=data.x;p.y=data.y;p.z=data.z;p.yaw=data.yaw;
     p.hp=Math.max(0,Math.min(20,data.hp));p.alive=!!data.alive;
+    const requestedTeam=Number(data.team);
+    if(Number.isInteger(requestedTeam)&&requestedTeam>=0&&requestedTeam<TEAM_CAPACITY.length&&
+       (requestedTeam===p.team||teamCount(room,requestedTeam)<TEAM_CAPACITY[requestedTeam]))p.team=requestedTeam;
     socket.to(code).volatile.emit("player:update",p);
   });
   socket.on("game:block:add", data => {
