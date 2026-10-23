@@ -368,6 +368,8 @@ function act(btn){if(!locked||!P.alive||over||ui||pau)return;
    if(P.sneak&&P.ground&&(!h||(h.b.y===fy0&&h.n[1]===1&&Math.abs(h.b.x-px0)<=1&&Math.abs(h.b.z-pz0)<=1))){const ax=Math.abs(dir.x)>Math.abs(dir.z),sx=ax?Math.sign(dir.x):0,sz=ax?0:Math.sign(dir.z);for(let k=1;k<=3&&!as;k++){const cx=px0+sx*k,cz=pz0+sz*k;if(!has(cx,fy0,cz)&&sup(cx,fy0,cz))as=[cx,fy0,cz]}}
    if(as){x=as[0];y=as[1];z=as[2]}else{if(!h)return;const n=h.n,u=h.b;x=u.x+n[0];y=u.y+n[1];z=u.z+n[2]}
    if(Math.hypot(x-P.p.x,z-P.p.z)>6)return;
+   const blocksPlayer=(px,py,pz)=>Math.abs(x-px)<.8&&Math.abs(z-pz)<.8&&y+.5>py+.05&&y-.5<py+1.75;
+   if(A.some(a=>a.alive&&blocksPlayer(a.p.x,a.p.y,a.p.z))||[...MP_STATE.remotes.values()].some(r=>r.alive!==false&&blocksPlayer(r.x,r.y,r.z))){say('NIE MOŻESZ POSTAWIĆ BLOKU W GRACZU');return}
    if(it.blk==='tnt'){lightTnt(x,y,z,P);swing=1;use();return}
    const bk=/^w\d$/.test(it.blk)?'w'+P.t:it.blk;const m=add(x,y,z,bk,'b',P.t);if(m){if(hit(P.p)){rem(m);return}swing=1;snd('put');spawn(x,y,z,PCL[bk]||0xdd4444,4);mpEmit('game:block:add',{x,y,z,k:bk,team:P.t});use()}}
   else if(it.u==='apple'||it.u==='speed'||it.u==='jump'){if(!P.use)P.use={id:it.u,t:it.u==='apple'?1.6:1.2,k:0}}
@@ -649,15 +651,21 @@ function mpSendRoomAction(action,code,name){
 }
 function mpRemoteUpdate(d){
  if(!d||!d.id||!Number.isFinite(d.x)||!Number.isFinite(d.y)||!Number.isFinite(d.z))return;
+ const team=Math.max(0,Math.min(TT.length-1,Number.isInteger(d.team)?d.team:1));
  let r=MP_STATE.remotes.get(d.id);
  if(!r){
-  const team=Math.max(0,Math.min(TT.length-1,Number(d.team)||1));
   const model=human(TT[team].col,0x223344,0xe0b08a,0x88aaff);
   scene.add(model.g);
   r={id:d.id,name:String(d.name||'Gracz').slice(0,16),m:model.g,model:model,x:d.x,y:d.y,z:d.z,yaw:0,hp:20,team:team};
   MP_STATE.remotes.set(d.id,r);
- } 
- r.x=d.x;r.y=d.y;r.z=d.z;r.yaw=Number(d.yaw)||0;r.hp=Number.isFinite(d.hp)?d.hp:20;r.alive=d.alive!==false;r.name=String(d.name||r.name);if(Number.isInteger(d.team))r.team=d.team;
+ }else if(r.team!==team){
+  const pos=r.m.position.clone(),rot=r.m.rotation.y,visible=r.m.visible;
+  scene.remove(r.m);
+  const model=human(TT[team].col,0x223344,0xe0b08a,0x88aaff);
+  model.g.position.copy(pos);model.g.rotation.y=rot;model.g.visible=visible;scene.add(model.g);
+  r.m=model.g;r.model=model;r.team=team;
+ }
+ r.x=d.x;r.y=d.y;r.z=d.z;r.yaw=Number(d.yaw)||0;r.hp=Number.isFinite(d.hp)?d.hp:20;r.alive=d.alive!==false;r.name=String(d.name||r.name);r.team=team;
  r.m.visible=r.alive;r.m.position.set(r.x,r.y,r.z);r.m.rotation.y=r.yaw;
 }
 function mpRemoteRemove(id){const r=MP_STATE.remotes.get(id);if(r){scene.remove(r.m);MP_STATE.remotes.delete(id)}}
