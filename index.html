@@ -213,7 +213,7 @@ const SH={'BLOKI':[['w0','Wełna',['iron',4],16],['stone','Kamień',['iron',12],
  'DYSTANS':[['bow','Łuk',['gold',12],1],['bow2','Wzmocniony łuk',['emerald',6],1],['arrow','Strzały',['gold',2],8]],
  'PRZEDMIOTY':[['pearl','Ender Pearl',['emerald',4],1],['apple','Jabłko',['gold',3],1],['speed','Mikstura szybkości',['emerald',1],1],['jump','Mikstura skoku',['emerald',1],1],['fire','Fireball',['iron',40],1],['kb','Knockback Stick',['gold',5],1]]};
 const NM={s1:'Drewniany miecz'};for(const c in SH)SH[c].forEach(e=>NM[e[0]]=e[1]);
-const IT={w0:{blk:'w0'},stone:{blk:'stone'},plank:{blk:'plank'},brick:{blk:'brick'},glass:{blk:'glass'},obsidian:{blk:'obsidian'},tnt:{blk:'tnt'},apple:{u:'apple'},speed:{u:'speed'},jump:{u:'jump'},fire:{u:'fire'},pearl:{u:'pearl'},bow:{u:'bow'},bow2:{u:'bow'}};
+const IT={w0:{blk:'w0'},w1:{blk:'w1'},w2:{blk:'w2'},w3:{blk:'w3'},w4:{blk:'w4'},w5:{blk:'w5'},w6:{blk:'w6'},w7:{blk:'w7'},stone:{blk:'stone'},plank:{blk:'plank'},brick:{blk:'brick'},glass:{blk:'glass'},obsidian:{blk:'obsidian'},tnt:{blk:'tnt'},apple:{u:'apple'},speed:{u:'speed'},jump:{u:'jump'},fire:{u:'fire'},pearl:{u:'pearl'},bow:{u:'bow'},bow2:{u:'bow'}};
 const NS=id=>/^[sp]\d$/.test(id)||id==='bow'||id==='bow2';
 const slots=Array(36).fill(null);let sel=0,ui=null,sw=null,tab='BLOKI',nearShop=true,fromMenu=false;
 const cnt=id=>slots.reduce((s,t)=>s+(t&&t.id===id?t.n:0),0);
@@ -369,7 +369,7 @@ function act(btn){if(!locked||!P.alive||over||ui||pau)return;
    if(as){x=as[0];y=as[1];z=as[2]}else{if(!h)return;const n=h.n,u=h.b;x=u.x+n[0];y=u.y+n[1];z=u.z+n[2]}
    if(Math.hypot(x-P.p.x,z-P.p.z)>6)return;
    if(it.blk==='tnt'){lightTnt(x,y,z,P);swing=1;use();return}
-   const m=add(x,y,z,it.blk,'b',P.t);if(m){if(hit(P.p)){rem(m);return}swing=1;snd('put');spawn(x,y,z,PCL[it.blk]||0xdd4444,4);mpEmit('game:block:add',{x,y,z,k:it.blk,team:P.t});use()}}
+   const bk=/^w\d$/.test(it.blk)?'w'+P.t:it.blk;const m=add(x,y,z,bk,'b',P.t);if(m){if(hit(P.p)){rem(m);return}swing=1;snd('put');spawn(x,y,z,PCL[bk]||0xdd4444,4);mpEmit('game:block:add',{x,y,z,k:bk,team:P.t});use()}}
   else if(it.u==='apple'||it.u==='speed'||it.u==='jump'){if(!P.use)P.use={id:it.u,t:it.u==='apple'?1.6:1.2,k:0}}
   else if(it.u==='fire'){snd('fire');proj('fire',new THREE.Vector3(P.p.x,P.p.y+1.5,P.p.z).addScaledVector(dir,1),dir,16,P,6);use()}
   else if(it.u==='pearl'){const r=vray(cam.position,dir,30),d=r?Math.max(1,r.d-1):30;P.p.set(cam.position.x+dir.x*d,cam.position.y+dir.y*d-1.6,cam.position.z+dir.z*d);for(let i=0;i<4&&hit(P.p);i++)P.p.y+=1;P.v.set(0,0,0);use()}
