@@ -232,19 +232,19 @@ const ROM=['I','II','III','IV'];
 const UPG=[{id:'sharp',n:'Ostre miecze',d:'Cała drużyna zadaje +25% obrażeń.',c:[4],ic:'s3'},{id:'prot',n:'Wzmocniona zbroja',d:'Ochrona +8% na poziom (I–IV).',c:[2,4,8,16],ic:'a3'},{id:'forge',n:'Kuźnia',d:'Szybsze generatory bazy; od III baza daje szmaragdy.',c:[2,4,6,8],ic:'fire'},{id:'heal',n:'Strefa leczenia',d:'Regeneracja drużyny w pobliżu bazy.',c:[1],ic:'apple'},{id:'haste',n:'Szalony górnik',d:'Szybsze niszczenie bloków (I–II).',c:[2,4],ic:'p3'},{id:'drag',n:'Smoczy buff',d:'Po 10 min: +30% obrażeń i +20% ochrony.',c:[5],ic:'diamond'}];
 const TRP=[{id:'trap',n:'To pułapka!',d:'Intruz: spowolnienie i oślepienie na 8 s.',ic:'jump'},{id:'ctr',n:'Kontratak',d:'Obrońcy dostają szybkość i skok na 15 s.',ic:'speed'},{id:'alarm',n:'Alarm',d:'Podświetla intruza i alarmuje drużynę.',ic:'bow'},{id:'fat',n:'Zmęczenie górnika',d:'Intruz nie niszczy bloków przez 12 s.',ic:'p1'}];
 const trapCost=q=>[1,2,4][q];
-function renderUp(){const T=TT[0],dia=cnt('diamond'),q=T.traps,tc=q.length<3?trapCost(q.length):0;
+function renderUp(){const T=TT[P.t],dia=cnt('diamond'),q=T.traps,tc=q.length<3?trapCost(q.length):0;
  const uc=u=>{const L=T.up[u.id],mx=u.c.length,done=L>=mx,cost=u.c[L],st=done?'MAKSYMALNY':!nearShop?'PODEJDŹ DO NPC':dia<cost?'BRAK DIAMENTÓW':'';
   return `<div class="card"><img src="${icon(u.ic)}"><div><b>${u.n}</b></div><div class="pp">${'■'.repeat(L)+'□'.repeat(mx-L)}</div><div class="ds">${u.d}</div><div class="pr">${done?'—':`<img src="${icon('diamond')}"> ${cost}`}</div><button data-u="${u.id}" ${st?'disabled':''}>${st||'KUP'}</button></div>`};
  const tcard=t=>{const st=q.length>=3?'KOLEJKA PEŁNA':!nearShop?'PODEJDŹ DO NPC':dia<tc?'BRAK DIAMENTÓW':'';return `<div class="card"><img src="${icon(t.ic)}"><div><b>${t.n}</b></div><div class="ds">${t.d}</div><div class="pr">${q.length>=3?'—':`<img src="${icon('diamond')}"> ${tc}`}</div><button data-tp="${t.id}" ${st?'disabled':''}>${st||'KUP'}</button></div>`};
  return `<div style="font-size:13px;margin-bottom:6px">Diamenty: <img src="${icon('diamond')}" width=16> <b>${dia}</b></div><div style="font-size:12px;margin-bottom:4px"><b>ULEPSZENIA DRUŻYNY</b></div><div class="cards">${UPG.map(uc).join('')}</div><div style="font-size:12px;margin:8px 0 4px"><b>PUŁAPKI</b> · kolejka: ${[0,1,2].map(i=>`<span class="s" style="display:inline-block;vertical-align:middle;width:30px;height:30px">${q[i]?`<img src="${icon(TRP.find(t=>t.id===q[i]).ic)}">`:''}</span>`).join(' ')} <small>(ceny 1/2/4 diamenty)</small></div><div class="cards">${TRP.map(tcard).join('')}</div>`}
-function buyUp(id){const T=TT[0],u=UPG.find(q=>q.id===id);if(!u||!nearShop)return;const L=T.up[id];if(L>=u.c.length)return;const c=u.c[L];if(cnt('diamond')<c){say('BRAK DIAMENTÓW');return}take('diamond',c);T.up[id]++;say('✔ '+u.n+' '+ROM[L]);snd('buy');spawn(P.p.x,P.p.y+1.5,P.p.z,0x44ddee,12);panel.classList.remove('bought');void panel.offsetWidth;panel.classList.add('bought');R()}
-function buyTrap(id){const T=TT[0];if(!nearShop||T.traps.length>=3)return;const c=trapCost(T.traps.length);if(cnt('diamond')<c){say('BRAK DIAMENTÓW');return}take('diamond',c);T.traps.push(id);say('✔ Pułapka w kolejce');snd('buy');R()}
+function buyUp(id){const T=TT[P.t],u=UPG.find(q=>q.id===id);if(!u||!nearShop)return;const L=T.up[id];if(L>=u.c.length)return;const c=u.c[L];if(cnt('diamond')<c){say('BRAK DIAMENTÓW');return}take('diamond',c);T.up[id]++;say('✔ '+u.n+' '+ROM[L]);snd('buy');spawn(P.p.x,P.p.y+1.5,P.p.z,0x44ddee,12);panel.classList.remove('bought');void panel.offsetWidth;panel.classList.add('bought');R()}
+function buyTrap(id){const T=TT[P.t];if(!nearShop||T.traps.length>=3)return;const c=trapCost(T.traps.length);if(cnt('diamond')<c){say('BRAK DIAMENTÓW');return}take('diamond',c);T.traps.push(id);say('✔ Pułapka w kolejce');snd('buy');R()}
 function checkTraps(){for(const T of TT){if(T.out||!T.traps.length||T.tcd>0)continue;for(const a of A){if(!a.alive||a.t===T.i||Math.hypot(a.p.x-T.bx,a.p.z-T.bz)>13||Math.abs(a.p.y-1)>6)continue;
   const id=T.traps.shift(),def=TRP.find(t=>t.id===id);T.tcd=22;feed('🪤 '+def.n+' – baza '+T.name+' ('+a.name+')',T.col);snd('bed',.6,T.bx,T.bz);
   if(id==='trap'){a.slow=8;if(a.isP)blind=8}else if(id==='ctr'){for(const m of A)if(m.t===T.i&&m.alive){m.fx.sp=15;m.fx.jp=15}}else if(id==='alarm'){a.glow=10;if(T.i===0)say('ALARM! Intruz w twojej bazie!')}else if(id==='fat'){a.nomine=12;if(a.isP)say('ZMĘCZENIE GÓRNIKA – nie niszczysz bloków')}
   break}}}
 const regen=a=>{const T=TT[a.t];return .3+(T.up.heal&&Math.hypot(a.p.x-T.bx,a.p.z-T.bz)<16?.9:0)};
-function card(e,i){const[id,nm,cost,n]=e,up=tab==='ULEPSZENIA',L=up?TT[0].up[id]:0;let c=up?['diamond',cost[L]||0]:cost,st='';
+function card(e,i){const[id,nm,cost,n]=e,up=tab==='ULEPSZENIA',L=up?TT[P.t].up[id]:0;let c=up?['diamond',cost[L]||0]:cost,st='';
  if(up){if(L>=cost.length)st='MAX'}else if(OWN(id))st='JUŻ POSIADASZ';
  if(!st&&cnt(c[0])<c[1])st='BRAK SUROWCÓW';if(!st&&!nearShop)st='PODEJDŹ DO OSADNIKA';
  return `<div class="card"><img src="${icon(id)}"><div><b>${nm}${n>1?' ×'+n:''}${up?' '+(ROM[L]||'MAX'):''}</b></div><div class="ds">${(up?DU:DS)[id]||''}</div><div class="pr">${st==='MAX'?'—':`<img src="${icon(c[0])}"> ${c[1]}`}</div><button data-i="${i}" ${st?'disabled':''}>${st||'KUP'}</button></div>`}
@@ -253,7 +253,7 @@ function R(){refresh();bar.innerHTML=slots.slice(0,9).map((t,i)=>`<div class="s$
  if(ui==='inv')panel.innerHTML=`<div id="grid">${slots.map((t,i)=>`<div class="s${i===sw?' sel':''}" data-k="${i}">${sl(t)}</div>`).join('')}</div><div style="margin-top:6px;font-size:12px">Q – wyrzuć · klik–klik – zamiana · zbroja: ${P.ar?`<img src="${icon('a'+P.ar)}" width=20>`:'brak'}</div>`;
  if(ui==='shop'){const tl=shopMode==='up'?['ULEPSZENIA']:Object.keys(SH).concat(shopMode==='all'?['ULEPSZENIA']:[]);if(!tl.includes(tab))tab=tl[0];
   panel.innerHTML=`<div class="tabs">${tl.map(c=>`<button data-t="${c}" class="${c===tab?'on':''}">${c}</button>`).join('')}</div>`+(tab==='ULEPSZENIA'?renderUp():`<div style="font-size:12px;margin-bottom:6px">${TD[tab]}</div><div class="cards">${SH[tab].map(card).join('')}</div>`)}}
-function buyP(i){const e=SH[tab][i],id=e[0],n=e[3],up=tab==='ULEPSZENIA',T=TT[0];let c=e[2];
+function buyP(i){const e=SH[tab][i],id=e[0],n=e[3],up=tab==='ULEPSZENIA',T=TT[P.t];let c=e[2];
  if(up){const L=T.up[id];if(L>=c.length)return;c=['diamond',c[L]]}else if(OWN(id))return;
  if(!nearShop||cnt(c[0])<c[1]){say('BRAK SUROWCÓW');return}
  take(c[0],c[1]);
@@ -354,11 +354,14 @@ function brk(b,tool,att){if(b.t==='gen'||b.map||(att&&att.nomine>0))return 0;if(
  b.hp-=Math.max(1,tool);snd('brk',.5,b.x,b.z);spawn(b.x,b.y+.3,b.z,PCL[b.k]||0x999999,3);if(b.hp>0)return 1;rem(b);if(b.t==='bed')bedDestroyed(b.team,att);return 2}
 function use(){const t=slots[sel];if(t){t.n--;if(!t.n)slots[sel]=null;R()}}
 function act(btn){if(!locked||!P.alive||over||ui||pau)return;
- cam.getWorldDirection(dir);const h=vray(cam.position,dir,5.5),held=slots[sel],id=held&&held.id,T0=TT[0];
+ cam.getWorldDirection(dir);const h=vray(cam.position,dir,5.5),held=slots[sel],id=held&&held.id,T0=TT[P.t];
  if(btn===0){if(P.cd>0)return;swing=1;P.cd=.45;let best=null,bd=9;
   for(const b of bots){if(!b.alive||b.t===0)continue;const l=look(b.p,.9);if(l.d<4.2&&l.dot>.93&&l.d<bd&&(!h||h.d>l.d-.5)){best=b;bd=l.d}}
   if(best){const kb=id==='kb';hurt(best,(kb?2:SWD[P.sw])*(1+.25*T0.up.sharp),P.p,!P.ground&&P.v.y<0,P,kb?16:8);return}
-  if(h){if(h.b.map)say('MAPY NIE MOŻNA NISZCZYĆ');else brk(h.b,P.pk+T0.up.haste,P)}}
+  let remote=null,rd=4.2;
+  for(const r of MP_STATE.remotes.values()){if(!r.alive||r.team===P.t)continue;const l=look(r.m.position,.9);if(l.d<rd&&l.dot>.93&&(!h||h.d>l.d-.5)){remote=r;rd=l.d}}
+  if(remote){const kb=id==='kb';mpEmit('game:attack',{target:remote.id,damage:(kb?2:SWD[P.sw])*(1+.25*T0.up.sharp),knockback:kb?16:8});return}
+  if(h){if(h.b.map)say('MAPY NIE MOŻNA NISZCZYĆ');else{const bt=h.b.t==='bed'?h.b.team:null;const bx=h.b.x,by=h.b.y,bz=h.b.z;const result=brk(h.b,P.pk+T0.up.haste,P);if(result===2)mpEmit('game:block:remove',{x:bx,y:by,z:bz,bedTeam:bt})}}}
  else{const l=look(VG.position,1);if(l.d<4.5&&l.dot>.93){shopMode='items';tab='BLOKI';openUI('shop');return}const l2=look(VG2.position,1);if(l2.d<4.5&&l2.dot>.93){shopMode='up';tab='ULEPSZENIA';openUI('shop');return}
   const it=id&&IT[id];if(!it)return;
   if(it.blk){let x,y,z,as=null;const fy0=Math.floor(P.p.y+.5)-1,px0=Math.floor(P.p.x+.5),pz0=Math.floor(P.p.z+.5);
@@ -366,7 +369,7 @@ function act(btn){if(!locked||!P.alive||over||ui||pau)return;
    if(as){x=as[0];y=as[1];z=as[2]}else{if(!h)return;const n=h.n,u=h.b;x=u.x+n[0];y=u.y+n[1];z=u.z+n[2]}
    if(Math.hypot(x-P.p.x,z-P.p.z)>6)return;
    if(it.blk==='tnt'){lightTnt(x,y,z,P);swing=1;use();return}
-   const m=add(x,y,z,it.blk,'b',0);if(m){if(hit(P.p)){rem(m);return}swing=1;snd('put');spawn(x,y,z,PCL[it.blk]||0xdd4444,4);use()}}
+   const m=add(x,y,z,it.blk,'b',P.t);if(m){if(hit(P.p)){rem(m);return}swing=1;snd('put');spawn(x,y,z,PCL[it.blk]||0xdd4444,4);mpEmit('game:block:add',{x,y,z,k:it.blk,team:P.t});use()}}
   else if(it.u==='apple'||it.u==='speed'||it.u==='jump'){if(!P.use)P.use={id:it.u,t:it.u==='apple'?1.6:1.2,k:0}}
   else if(it.u==='fire'){snd('fire');proj('fire',new THREE.Vector3(P.p.x,P.p.y+1.5,P.p.z).addScaledVector(dir,1),dir,16,P,6);use()}
   else if(it.u==='pearl'){const r=vray(cam.position,dir,30),d=r?Math.max(1,r.d-1):30;P.p.set(cam.position.x+dir.x*d,cam.position.y+dir.y*d-1.6,cam.position.z+dir.z*d);for(let i=0;i<4&&hit(P.p);i++)P.p.y+=1;P.v.set(0,0,0);use()}
@@ -524,7 +527,7 @@ function ai(b,dt){const T=TT[b.t];
  b.sn=b.lkt>0||(b.mode==='route'&&b.ws[b.wi]&&b.ws[b.wi][2]===1);h.hd.rotation.x+=((b.lkt>0?b.lk:0)-h.hd.rotation.x)*Math.min(1,dt*14);
  b.m.rotation.x=b.ht>0?-b.ht*.9:(b.sn?.3:(sp>4?.12:0));b.m.position.copy(b.p);if(b.sn)b.m.position.y-=.15}
 let last=performance.now();R();menu();
-function hudU(){const hp=Math.max(0,Math.ceil(P.hp/2)),t=slots[sel],T0=TT[0],mm=Math.floor(gt/60),ss=String(Math.floor(gt%60)).padStart(2,'0'),nx=gt<240?240:gt<480?480:0,left=nx?Math.ceil(nx-gt):0;
+function hudU(){const hp=Math.max(0,Math.ceil(P.hp/2)),t=slots[sel],T0=TT[P.t],mm=Math.floor(gt/60),ss=String(Math.floor(gt%60)).padStart(2,'0'),nx=gt<240?240:gt<480?480:0,left=nx?Math.ceil(nx-gt):0;
  hud.innerHTML=`<span style="color:#e22">${'♥'.repeat(hp)}</span><span style="color:#555">${'♥'.repeat(10-hp)}</span> ${P.ar?`<img src="${icon('a'+P.ar)}">`:''}<br><b style="color:${T0.bed?'#6f6':'#f55'}">ŁÓŻKO: ${T0.bed?'ŻYJE':'ZNISZCZONE'}</b><br>⏱ ${mm}:${ss} · ${PHN[Math.max(0,curPh)]}<br>${t?`<img src="${icon(t.id)}"> ${NM[t.id]||t.id}`:'—'}<br>${TT.map(T=>`<span style="color:${hex(T.col)}">■ ${PLN[T.i]} ${T.out?'☠':T.bed?'🛏':'❌'+A.filter(a=>a.t===T.i&&a.alive).length}</span>`).join('<br>')}<br>⚔ ${ST.kills} · 🛏 ${ST.beds} · AI: ${DN[DIF]}<br>Generatory: poz. ${1+(gt>240)+(gt>480)}${nx?` (za ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')})`:' MAX'}`;
  resEl.innerHTML=['iron','gold','diamond','emerald'].map(k=>`<span><img src="${icon(k)}">${cnt(k)}</span>`).join('');
  feedEl.innerHTML=fd.filter(f=>f.e>gt).map(f=>`<div style="color:${f.c}">${f.t}</div>`).join('')}
@@ -543,13 +546,13 @@ function loop(now){requestAnimationFrame(loop);try{const dt=Math.min((now-last)/
   prstep(dt);for(const a of A){a.lt-=dt;a.cd-=dt;a.cd2-=dt;a.slow-=dt;a.nomine-=dt;if(a.glow>0){a.glow-=dt;if(fr%9===0)spawn(a.p.x,a.p.y+2.2,a.p.z,0xff4444,2)}}for(const T of TT){T.ft-=dt;T.tcd-=dt}if(fr%30===0)checkTraps();for(const b of bots){b.fx.sp-=dt;b.fx.jp-=dt}blind-=dt;
   if(P.use){const u=P.use,hd=slots[sel];if((!rmb&&!touch)||!hd||hd.id!==u.id||!P.alive)P.use=null;else{u.t-=dt;u.k-=dt;if(u.k<=0){u.k=.25;snd(u.id==='apple'?'eat':'drink',.8)}if(u.t<=0){if(u.id==='apple')P.hp=Math.min(20,P.hp+8);else if(u.id==='speed')P.fx.sp=30;else P.fx.jp=30;use();P.use=null;say(u.id==='apple'?'Zjadłeś jabłko':'Wypiłeś miksturę')}}}
   if(rmb&&P.sneak&&P.alive){P.cd3=(P.cd3||0)-dt;if(P.cd3<=0){P.cd3=.2;act(2)}}
-  if(P.alive){const cl=v=>Math.max(-1,Math.min(1,v)),f=cl((keys.KeyW?1:0)-(keys.KeyS?1:0)-mv.z),r=cl((keys.KeyD?1:0)-(keys.KeyA?1:0)+mv.x),s=Math.sin(yaw),c=Math.cos(yaw),sp=5*(1+.1*TT[0].up.speed)*(P.fx.sp>0?1.4:1)*(P.sneak?.4:1)*(P.use?.55:1)*(P.slow>0?.5:1);
+  if(P.alive){const cl=v=>Math.max(-1,Math.min(1,v)),f=cl((keys.KeyW?1:0)-(keys.KeyS?1:0)-mv.z),r=cl((keys.KeyD?1:0)-(keys.KeyA?1:0)+mv.x),s=Math.sin(yaw),c=Math.cos(yaw),sp=5*(1+.1*TT[P.t].up.speed)*(P.fx.sp>0?1.4:1)*(P.sneak?.4:1)*(P.use?.55:1)*(P.slow>0?.5:1);
    P.fx.sp-=dt;P.fx.jp-=dt;
    if(P.kb<=0){P.v.x=(-s*f+c*r)*sp;P.v.z=(-c*f-s*r)*sp}else if(!P.ground){P.v.x+=(-s*f+c*r)*dt*12;P.v.z+=(-c*f-s*r)*dt*12}
    if(keys.Space&&P.ground)P.v.y=8.5*(P.fx.jp>0?1.35:1);
    if(P.sneak&&P.ground){const q=.3;if(P.v.x&&!solid(P.p.x+P.v.x*dt-Math.sign(P.v.x)*q,P.p.y-.5,P.p.z))P.v.x=0;if(P.v.z&&!solid(P.p.x,P.p.y-.5,P.p.z+P.v.z*dt-Math.sign(P.v.z)*q))P.v.z=0}
    phys(P,dt);if(P.alive&&(P.p.y<-15||P.hp<=0))die(P);P.hp=Math.min(20,P.hp+dt*regen(P))}
-  else{P.rt-=dt;if(P.rt<=0&&TT[0].bed&&!TT[0].out){respawn(P);if(!cnt('w0')){give('w0',16);R()}}}
+  else{P.rt-=dt;if(P.rt<=0&&TT[P.t].bed&&!TT[P.t].out){respawn(P);if(!cnt('w'+P.t)){give('w'+P.t,16);R()}}}
   for(const b of bots){if(Math.hypot(b.p.x-P.p.x,b.p.z-P.p.z)<170||fr%3===b.id%3)ai(b,dt)}
   pstep(dt)}
  cam.position.set(P.p.x,P.p.y+P.eh,P.p.z);cam.rotation.set(pitch+(Math.random()-.5)*shake*.06,yaw+(Math.random()-.5)*shake*.06,0);shake*=.9;flash*=.92;flEl.style.opacity=flash;blEl.style.opacity=blind>0?Math.min(.85,blind/2):0;
@@ -563,14 +566,50 @@ function loop(now){requestAnimationFrame(loop);try{const dt=Math.min((now-last)/
  ren.render(scene,cam)}catch(e){showErr(e)}}
 
 /* Multiplayer rooms: room management and remote-player position display. */
-const MP_STATE={socket:null,room:null,remotes:new Map(),name:"Gracz"};
+const MP_STATE={socket:null,room:null,remotes:new Map(),name:"Gracz",wantTeam:0,team:0,players:[],activated:false,applying:false};
 function mpMenu(){
  pau=true;msgEl.style.display='flex';
  const savedUrl=(()=>{try{return localStorage.getItem('bw_mp_url')||''}catch(e){return ''}})();
  const savedName=(()=>{try{return localStorage.getItem('bw6n')||P.name||'Gracz'}catch(e){return P.name||'Gracz'}})();
- msgEl.innerHTML='<h1>MULTIPLAYER</h1><div style="max-width:520px;padding:10px">Pokój dla 2–10 graczy. Wpisz adres serwera multiplayer oraz nick.<br><br><input id="mpUrl" placeholder="https://adres-twojego-serwera" value="'+esc(savedUrl)+'" style="box-sizing:border-box;width:min(90vw,420px);padding:10px;font:15px monospace"><br><input id="mpNick" maxlength="16" placeholder="Nick" value="'+esc(savedName)+'" style="box-sizing:border-box;width:min(90vw,420px);padding:10px;margin-top:8px;font:15px monospace"><br><div class="mb"><button data-mp="create">UTWÓRZ POKÓJ</button></div><input id="mpCode" maxlength="6" placeholder="KOD POKOJU" style="text-transform:uppercase;width:180px;padding:10px;font:18px monospace;text-align:center"><div class="mb"><button data-mp="join">DOŁĄCZ</button><button data-mp="back">WRÓĆ</button></div><div id="mpStatus" style="max-width:480px;overflow-wrap:anywhere">Najpierw uruchom serwer multiplayer i wpisz jego adres.</div></div>';
+ const teamNames=['Czerwoni','Niebiescy','Zieloni','Żółci','Błękitni','Różowi','Pomarańczowi','Fioletowi'];
+ msgEl.innerHTML='<h1>MULTIPLAYER</h1><div style="max-width:560px;padding:10px">Pokój dla maksymalnie 10 graczy. Najpierw wybierz drużynę, potem utwórz pokój lub dołącz.<br><br><input id="mpUrl" placeholder="https://adres-twojego-serwera" value="'+esc(savedUrl)+'" style="box-sizing:border-box;width:min(90vw,420px);padding:10px;font:15px monospace"><br><input id="mpNick" maxlength="16" placeholder="Nick" value="'+esc(savedName)+'" style="box-sizing:border-box;width:min(90vw,420px);padding:10px;margin-top:8px;font:15px monospace"><div style="margin-top:10px"><b>WYBIERZ DRUŻYNĘ</b><div class="mb">'+teamNames.map((n,i)=>'<button data-mp-team="'+i+'" style="background:'+['#b22','#246','#282','#aa2','#088','#a48','#a50','#639'][i]+'">'+n+'</button>').join('')+'</div></div><div class="mb"><button data-mp="create">UTWÓRZ POKÓJ</button></div><input id="mpCode" maxlength="6" placeholder="KOD POKOJU" style="text-transform:uppercase;width:180px;padding:10px;font:18px monospace;text-align:center"><div class="mb"><button data-mp="join">DOŁĄCZ</button><button data-mp="start">GRAJ W POKOJU</button><button data-mp="back">WRÓĆ</button></div><div id="mpStatus" style="max-width:480px;overflow-wrap:anywhere">Wybrana drużyna: '+teamNames[MP_STATE.wantTeam]+'</div><div id="mpRoster" style="text-align:left;max-width:520px;margin:10px auto"></div></div>';
+ mpRenderRoster(MP_STATE.players||[]);
 }
 function mpStatus(t){const e=document.getElementById('mpStatus');if(e)e.textContent=t}
+function mpRenderRoster(list){
+ MP_STATE.players=list||[];
+ const e=document.getElementById('mpRoster');if(!e)return;
+ const names=['Czerwoni','Niebiescy','Zieloni','Żółci','Błękitni','Różowi','Pomarańczowi','Fioletowi'];
+ e.innerHTML='<b>GRACZE W POKOJU ('+MP_STATE.players.length+'/10)</b><br>'+MP_STATE.players.map(p=>'<div style="padding:4px;border-bottom:1px solid #777"><span style="color:'+['#e44','#69f','#5d5','#ff5','#5ee','#f8c','#fa5','#b9f'][p.team]+'">■ '+names[p.team]+'</span> — '+esc(p.name)+(MP_STATE.socket&&p.id===MP_STATE.socket.id?' (TY)':'')+'</div>').join('');
+}
+function mpChooseTeam(team){
+ MP_STATE.wantTeam=team;
+ const s=MP_STATE.socket;
+ if(s&&s.connected&&MP_STATE.room){
+  s.emit('room:team',{team},r=>{if(!r||!r.ok){mpStatus(r&&r.error||'Nie udało się zmienić drużyny.');return}MP_STATE.team=team;mpStatus('Wybrano drużynę.');});
+ }else mpStatus('Wybrana drużyna: '+['Czerwoni','Niebiescy','Zieloni','Żółci','Błękitni','Różowi','Pomarańczowi','Fioletowi'][team]);
+}
+function mpApplyTeam(team){
+ team=Math.max(0,Math.min(TT.length-1,Number(team)||0));
+ MP_STATE.team=team;MP_STATE.wantTeam=team;P.t=team;P.sx=TT[team].sx;P.sz=TT[team].sz;
+ respawn(P);
+ for(let i=0;i<slots.length;i++)if(slots[i]&&/^w[0-7]$/.test(slots[i].id))slots[i]=null;
+ give('w'+team,32);R();
+}
+function mpReconcileBots(list){
+ if(MP_STATE.activated===false&&!started)return;
+ for(let team=0;team<TT.length;team++){
+  const needed=(list||[]).filter(p=>p.team===team).length;
+  for(let n=0;n<needed;n++){
+   const i=bots.findIndex(b=>b.t===team&&b.alive&& !b.mpRemoved);
+   if(i<0)break;
+   const b=bots[i];b.mpRemoved=true;scene.remove(b.m);
+   const ai=A.indexOf(b);if(ai>=0)A.splice(ai,1);
+   bots.splice(i,1);
+  }
+ }
+}
+function mpEmit(event,data){const s=MP_STATE.socket;if(s&&s.connected&&MP_STATE.room&&!MP_STATE.applying)s.emit(event,data)}
 function mpConnect(action,code){
  const u=document.getElementById('mpUrl'),n=document.getElementById('mpNick');
  const url=(u&&u.value||'').trim().replace(/\/+$/,'');
@@ -585,21 +624,28 @@ function mpConnect(action,code){
  const s=io(url,{transports:['websocket','polling'],timeout:10000});MP_STATE.socket=s;
  s.on('connect',()=>mpSendRoomAction(action,code,name));
  s.on('connect_error',e=>mpStatus('Nie można połączyć z serwerem: '+(e&&e.message||'błąd połączenia')));
- s.on('room:players',list=>{for(const p of list||[])if(p.id!==s.id)mpRemoteUpdate(p);mpStatus('Pokój '+(MP_STATE.room||'')+' · gracze: '+((list||[]).length)+'/10. Uruchom grę przyciskiem GRAJ.')});
+ s.on('room:players',list=>{MP_STATE.players=list||[];for(const p of list||[])if(p.id!==s.id)mpRemoteUpdate(p);mpRenderRoster(list||[]);if(MP_STATE.room)mpReconcileBots(list||[])});
  s.on('player:join',p=>{if(p&&p.id!==s.id)mpRemoteUpdate(p);mpStatus('Gracz dołączył do pokoju '+(MP_STATE.room||''))});
  s.on('player:update',p=>{if(p&&p.id!==s.id)mpRemoteUpdate(p)});
- s.on('player:leave',id=>mpRemoteRemove(id));
+  s.on('player:leave',id=>mpRemoteRemove(id));
+ s.on('game:block:add',b=>mpApplyRemoteBlock(b));
+ s.on('game:block:remove',b=>mpApplyRemoteRemove(b));
+ s.on('game:bed',d=>{if(d&&TT[d.team])bedDestroyed(d.team,null)});
+ s.on('player:hit',d=>{if(!d)return;const f=d.from||{};hurt(P,Math.max(1,Math.min(12,d.damage||4)),{x:Number(f.x)||P.p.x-1,y:Number(f.y)||P.p.y,z:Number(f.z)||P.p.z},false,{name:f.name||'Gracz',t:Number(f.team)||0,isP:false},d.knockback||8)});
  s.on('room:error',m=>mpStatus(m||'Błąd pokoju.'));
 }
 function mpSendRoomAction(action,code,name){
  const s=MP_STATE.socket;if(!s)return;
  const done=(r)=>{if(!r||!r.ok){mpStatus(r&&r.error||'Nie udało się wejść do pokoju.');return}
- MP_STATE.room=r.code;MP_STATE.team=r.team;MP_STATE.remotes.forEach((v,k)=>mpRemoteRemove(k));
+ MP_STATE.room=r.code;MP_STATE.team=r.team;MP_STATE.wantTeam=r.team;
+ mpApplyTeam(r.team);MP_STATE.remotes.forEach((v,k)=>mpRemoteRemove(k));
  const c=document.getElementById('mpCode');if(c)c.value=r.code;
- mpStatus('Połączono! Kod pokoju: '+r.code+' · '+r.count+'/10 graczy. Podaj kod znajomym. Ruch graczy jest synchronizowany; walka, bloki i łóżka nie są jeszcze synchronizowane.');
+ if(r.blocks)for(const b of r.blocks)mpApplyRemoteBlock(b);
+ mpRenderRoster(r.players||[]);
+ mpStatus('Połączono! Kod pokoju: '+r.code+' · '+r.count+'/10. Wybierz drużynę i kliknij GRAJ W POKOJU.');
  };
- if(action==='create')s.emit('room:create',{name:name},done);
- else s.emit('room:join',{code:(code||'').trim().toUpperCase(),name:name},done);
+ if(action==='create')s.emit('room:create',{name:name,team:MP_STATE.wantTeam},done);
+ else s.emit('room:join',{code:(code||'').trim().toUpperCase(),name:name,team:MP_STATE.wantTeam},done);
 }
 function mpRemoteUpdate(d){
  if(!d||!d.id||!Number.isFinite(d.x)||!Number.isFinite(d.y)||!Number.isFinite(d.z))return;
@@ -615,17 +661,32 @@ function mpRemoteUpdate(d){
  r.m.visible=r.alive;r.m.position.set(r.x,r.y,r.z);r.m.rotation.y=r.yaw;
 }
 function mpRemoteRemove(id){const r=MP_STATE.remotes.get(id);if(r){scene.remove(r.m);MP_STATE.remotes.delete(id)}}
+function mpApplyRemoteBlock(d){
+ if(!d||!Number.isInteger(d.x)||!Number.isInteger(d.y)||!Number.isInteger(d.z))return;
+ MP_STATE.applying=true;
+ if(!has(d.x,d.y,d.z))add(d.x,d.y,d.z,d.k||'plank','b',d.team);
+ MP_STATE.applying=false;
+}
+function mpApplyRemoteRemove(d){
+ if(!d||!Number.isInteger(d.x)||!Number.isInteger(d.y)||!Number.isInteger(d.z))return;
+ MP_STATE.applying=true;
+ const b=blocks.get(K(d.x,d.y,d.z));if(b)rem(b);
+ if(Number.isInteger(d.bedTeam)&&TT[d.bedTeam])bedDestroyed(d.bedTeam,null);
+ MP_STATE.applying=false;
+}
 msgEl.addEventListener('click',e=>{
  const b=e.target.closest&&e.target.closest('[data-mp]');if(!b)return;
  const a=b.dataset.mp;
  if(a==='back'){menu();return}
  if(a==='create'){mpConnect('create','');return}
  if(a==='join'){const c=document.getElementById('mpCode');if(!c||!c.value.trim()){mpStatus('Wpisz kod pokoju.');return}mpConnect('join',c.value);return}
+ if(a==='start'){if(!MP_STATE.room){mpStatus('Najpierw utwórz pokój lub dołącz kodem.');return}started=true;pau=false;MP_STATE.activated=true;mpReconcileBots(MP_STATE.players);msgEl.style.display='none';if(touch)locked=true;else lock();return}
 });
+msgEl.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mp-team]');if(!b)return;mpChooseTeam(Number(b.dataset.mpTeam));});
 setInterval(()=>{
  const s=MP_STATE.socket;
  if(!s||!s.connected||!MP_STATE.room)return;
- s.emit('player:state',{name:MP_STATE.name,x:P.p.x,y:P.p.y,z:P.p.z,yaw:yaw,hp:P.hp,alive:!!P.alive});
+ s.emit('player:state',{name:MP_STATE.name,team:P.t,x:P.p.x,y:P.p.y,z:P.p.z,yaw:yaw,hp:P.hp,alive:!!P.alive});
  for(const r of MP_STATE.remotes.values()){r.m.position.x+=(r.x-r.m.position.x)*.65;r.m.position.y+=(r.y-r.m.position.y)*.65;r.m.position.z+=(r.z-r.m.position.z)*.65}
 },100);
 
