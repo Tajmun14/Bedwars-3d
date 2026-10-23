@@ -244,16 +244,16 @@ function checkTraps(){for(const T of TT){if(T.out||!T.traps.length||T.tcd>0)cont
   if(id==='trap'){a.slow=8;if(a.isP)blind=8}else if(id==='ctr'){for(const m of A)if(m.t===T.i&&m.alive){m.fx.sp=15;m.fx.jp=15}}else if(id==='alarm'){a.glow=10;if(T.i===0)say('ALARM! Intruz w twojej bazie!')}else if(id==='fat'){a.nomine=12;if(a.isP)say('ZMĘCZENIE GÓRNIKA – nie niszczysz bloków')}
   break}}}
 const regen=a=>{const T=TT[a.t];return .3+(T.up.heal&&Math.hypot(a.p.x-T.bx,a.p.z-T.bz)<16?.9:0)};
-function card(e,i){const[id,nm,cost,n]=e,up=tab==='ULEPSZENIA',L=up?TT[P.t].up[id]:0;let c=up?['diamond',cost[L]||0]:cost,st='';
+function card(e,i){const[rawId,nm,cost,n]=e,id=rawId==='w0'?'w'+P.t:rawId,up=tab==='ULEPSZENIA',L=up?TT[P.t].up[id]:0;let c=up?['diamond',cost[L]||0]:cost,st='';
  if(up){if(L>=cost.length)st='MAX'}else if(OWN(id))st='JUŻ POSIADASZ';
  if(!st&&cnt(c[0])<c[1])st='BRAK SUROWCÓW';if(!st&&!nearShop)st='PODEJDŹ DO OSADNIKA';
- return `<div class="card"><img src="${icon(id)}"><div><b>${nm}${n>1?' ×'+n:''}${up?' '+(ROM[L]||'MAX'):''}</b></div><div class="ds">${(up?DU:DS)[id]||''}</div><div class="pr">${st==='MAX'?'—':`<img src="${icon(c[0])}"> ${c[1]}`}</div><button data-i="${i}" ${st?'disabled':''}>${st||'KUP'}</button></div>`}
+ return `<div class="card"><img src="${icon(id)}"><div><b>${nm}${n>1?' ×'+n:''}${up?' '+(ROM[L]||'MAX'):''}</b></div><div class="ds">${(up?DU:DS)[id]||DS[rawId]||''}</div><div class="pr">${st==='MAX'?'—':`<img src="${icon(c[0])}"> ${c[1]}`}</div><button data-i="${i}" ${st?'disabled':''}>${st||'KUP'}</button></div>`}
 function R(){refresh();bar.innerHTML=slots.slice(0,9).map((t,i)=>`<div class="s${i===sel?' sel':''}" data-h="${i}">${sl(t)}</div>`).join('');
  const t=slots[sel];hold.visible=!!t;if(t){if(IT[t.id]&&IT[t.id].blk){hold.geometry=holdBox;hold.material=MAT[t.id];hold.rotation.set(0,0,0)}else{hold.geometry=holdPl;hold.material=itex(t.id);hold.rotation.set(0,-.35,.35)}hold.scale.set(1,1,1)}
  if(ui==='inv')panel.innerHTML=`<div id="grid">${slots.map((t,i)=>`<div class="s${i===sw?' sel':''}" data-k="${i}">${sl(t)}</div>`).join('')}</div><div style="margin-top:6px;font-size:12px">Q – wyrzuć · klik–klik – zamiana · zbroja: ${P.ar?`<img src="${icon('a'+P.ar)}" width=20>`:'brak'}</div>`;
  if(ui==='shop'){const tl=shopMode==='up'?['ULEPSZENIA']:Object.keys(SH).concat(shopMode==='all'?['ULEPSZENIA']:[]);if(!tl.includes(tab))tab=tl[0];
   panel.innerHTML=`<div class="tabs">${tl.map(c=>`<button data-t="${c}" class="${c===tab?'on':''}">${c}</button>`).join('')}</div>`+(tab==='ULEPSZENIA'?renderUp():`<div style="font-size:12px;margin-bottom:6px">${TD[tab]}</div><div class="cards">${SH[tab].map(card).join('')}</div>`)}}
-function buyP(i){const e=SH[tab][i],id=e[0],n=e[3],up=tab==='ULEPSZENIA',T=TT[P.t];let c=e[2];
+function buyP(i){const e=SH[tab][i],rawId=e[0],id=rawId==='w0'?'w'+P.t:rawId,n=e[3],up=tab==='ULEPSZENIA',T=TT[P.t];let c=e[2];
  if(up){const L=T.up[id];if(L>=c.length)return;c=['diamond',c[L]]}else if(OWN(id))return;
  if(!nearShop||cnt(c[0])<c[1]){say('BRAK SUROWCÓW');return}
  take(c[0],c[1]);
@@ -664,7 +664,7 @@ function mpRemoteRemove(id){const r=MP_STATE.remotes.get(id);if(r){scene.remove(
 function mpApplyRemoteBlock(d){
  if(!d||!Number.isInteger(d.x)||!Number.isInteger(d.y)||!Number.isInteger(d.z))return;
  MP_STATE.applying=true;
- if(!has(d.x,d.y,d.z))add(d.x,d.y,d.z,d.k||'plank','b',d.team);
+ if(!has(d.x,d.y,d.z))add(d.x,d.y,d.z,d.k||'plank','b',Number.isInteger(d.team)?d.team:undefined);
  MP_STATE.applying=false;
 }
 function mpApplyRemoteRemove(d){
