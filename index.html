@@ -594,6 +594,7 @@ function mpChooseTeam(team){
 function mpApplyTeam(team){
  team=Math.max(0,Math.min(TT.length-1,Number(team)||0));
  MP_STATE.team=team;MP_STATE.wantTeam=team;P.t=team;P.sx=TT[team].sx;P.sz=TT[team].sz;
+ if(typeof P.model!=='undefined'&&P.model){const pos=P.model.g.position.clone(),rot=P.model.g.rotation.y;scene.remove(P.model.g);P.model=human(TT[team].col,0x223344,0xe0b08a,0x88aaff);P.model.g.position.copy(pos);P.model.g.rotation.y=rot;scene.add(P.model.g)}
  respawn(P);VG.position.set(TT[team].ax,.5,TT[team].az-3);VG2.position.set(TT[team].ux,.5,TT[team].uz);
  for(let i=0;i<slots.length;i++)if(slots[i]&&/^w[0-7]$/.test(slots[i].id))slots[i]=null;
  give('w'+team,32);R();
