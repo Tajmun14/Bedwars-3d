@@ -599,16 +599,41 @@ function mpApplyTeam(team){
  for(let i=0;i<slots.length;i++)if(slots[i]&&/^w[0-7]$/.test(slots[i].id))slots[i]=null;
  give('w'+team,32);R();
 }
+function mpRemoveBot(b){
+ if(!b)return;
+ b.mpRemoved=true;scene.remove(b.m);
+ const ai=A.indexOf(b);if(ai>=0)A.splice(ai,1);
+ const bi=bots.indexOf(b);if(bi>=0)bots.splice(bi,1);
+}
+function mpCreateBot(team,template){
+ if(!template)return;
+ const name=TT[team].name+' AI '+(bots.filter(b=>b.t===team&&!b.mpRemoved).length+1);
+ const b=mkA(team,name);
+ for(const k of Object.keys(template)){
+  if(['p','v','t','name','h','m','hg','am','fx','res','dng','ws','n'].includes(k))continue;
+  b[k]=template[k];
+ }
+ b.t=team;b.name=name;b.p=new THREE.Vector3();b.v=new THREE.Vector3();b.fx={sp:0,jp:0};
+ b.res={iron:0,gold:0,diamond:0,emerald:0};b.dng={};b.ws=[];b.n=E.map(()=>.8+Math.random()*.8);
+ b.h=human(TT[team].col,0x223344,0xe0b08a,HC[(bots.length+team)%HC.length]);b.m=b.h.g;scene.add(b.m);
+ b.hg=heldGroup(team);b.h.ar.add(b.hg.g);
+ const am=new THREE.Mesh(new THREE.BoxGeometry(.56,.74,.3),mat(0xb8b8c0));am.position.y=1.05;am.visible=false;b.m.add(am);b.am=am;
+ b.id='mpbot-'+team+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+ respawn(b);A.push(b);bots.push(b);
+}
 function mpReconcileBots(list){
  if(!MP_STATE.activated)return;
+ list=list||MP_STATE.players||[];
  for(let team=0;team<TT.length;team++){
-  const needed=(list||[]).filter(p=>p.team===team).length;
-  for(let n=0;n<needed;n++){
-   const i=bots.findIndex(b=>b.t===team&&!b.mpRemoved);
-   if(i<0)break;
-   const b=bots[i];b.mpRemoved=true;scene.remove(b.m);
-   const ai=A.indexOf(b);if(ai>=0)A.splice(ai,1);
-   bots.splice(i,1);
+  const players=list.filter(p=>p.team===team).length;
+  const target=Math.max(0,2-players);
+  let current=bots.filter(b=>b.t===team&&!b.mpRemoved);
+  while(current.length>target){mpRemoveBot(current.pop())}
+  while(current.length<target){
+   const template=bots.find(b=>!b.mpRemoved);
+   if(!template)break;
+   mpCreateBot(team,template);
+   current=bots.filter(b=>b.t===team&&!b.mpRemoved);
   }
  }
 }
